@@ -38,6 +38,37 @@ def get_categories():
         return create_json_response({'message': 'Internal server error', 'details': categories["error"]}, status_code=500)
     return create_json_response(categories)
 
+#################  BLS ############################
+@app.route('/unemployment_rate', methods=['GET'], cors=True)  #data from BLS
+def get_categories():
+    categories = fetch_json_from_s3('api/bls/unemployment_rate.json')
+    if "error" in categories:
+        return create_json_response({'message': 'Internal server error', 'details': categories["error"]}, status_code=500)
+    return create_json_response(categories)
+
+@app.route('/nonfarm_payroll', methods=['GET'], cors=True)  #data from BLS
+def get_categories():
+    categories = fetch_json_from_s3('api/bls/nonfarm_payroll.json')
+    if "error" in categories:
+        return create_json_response({'message': 'Internal server error', 'details': categories["error"]}, status_code=500)
+    return create_json_response(categories)
+
+@app.route('/us_avg_weekly_hours', methods=['GET'], cors=True)  #data from BLS
+def get_categories():
+    categories = fetch_json_from_s3('api/bls/us_avg_weekly_hours.json')
+    if "error" in categories:
+        return create_json_response({'message': 'Internal server error', 'details': categories["error"]}, status_code=500)
+    return create_json_response(categories)
+
+@app.route('/us_job_opening', methods=['GET'], cors=True)  #data from BLS
+def get_categories():
+    categories = fetch_json_from_s3('api/bls/us_job_opening.json')
+    if "error" in categories:
+        return create_json_response({'message': 'Internal server error', 'details': categories["error"]}, status_code=500)
+    return create_json_response(categories)
+###################################################
+
+
 # Endpoint to get all articles or filter by id
 @app.route('/articles', methods=['GET'], cors=True)
 @app.route('/articles/{id}', methods=['GET'], cors=True)
