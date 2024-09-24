@@ -38,37 +38,6 @@ def get_categories():
         return create_json_response({'message': 'Internal server error', 'details': categories["error"]}, status_code=500)
     return create_json_response(categories)
 
-#################  BLS ############################
-@app.route('/unemployment_rate', methods=['GET'], cors=True)  #data from BLS
-def get_categories():
-    categories = fetch_json_from_s3('api/bls/unemployment_rate.json')
-    if "error" in categories:
-        return create_json_response({'message': 'Internal server error', 'details': categories["error"]}, status_code=500)
-    return create_json_response(categories)
-
-@app.route('/nonfarm_payroll', methods=['GET'], cors=True)  #data from BLS
-def get_categories():
-    categories = fetch_json_from_s3('api/bls/nonfarm_payroll.json')
-    if "error" in categories:
-        return create_json_response({'message': 'Internal server error', 'details': categories["error"]}, status_code=500)
-    return create_json_response(categories)
-
-@app.route('/us_avg_weekly_hours', methods=['GET'], cors=True)  #data from BLS
-def get_categories():
-    categories = fetch_json_from_s3('api/bls/us_avg_weekly_hours.json')
-    if "error" in categories:
-        return create_json_response({'message': 'Internal server error', 'details': categories["error"]}, status_code=500)
-    return create_json_response(categories)
-
-@app.route('/us_job_opening', methods=['GET'], cors=True)  #data from BLS
-def get_categories():
-    categories = fetch_json_from_s3('api/bls/us_job_opening.json')
-    if "error" in categories:
-        return create_json_response({'message': 'Internal server error', 'details': categories["error"]}, status_code=500)
-    return create_json_response(categories)
-###################################################
-
-
 # Endpoint to get all articles or filter by id
 @app.route('/articles', methods=['GET'], cors=True)
 @app.route('/articles/{id}', methods=['GET'], cors=True)
@@ -187,3 +156,120 @@ def get_daily_ohlc(symbol):
             return create_json_response(data)
     else:
         return create_json_response({'message': 'Symbol is required'}, status_code=400)
+    
+#################  BLS ############################
+@app.route('/unemployment_rate', methods=['GET'], cors=True)  #data from BLS
+def get_unemployment_rate():
+    data = fetch_json_from_s3('api/bls/unemployment_rate.json')
+    if "error" in data:
+        return create_json_response({'message': 'Internal server error', 'details': data["error"]}, status_code=500)
+    return create_json_response(data)
+
+@app.route('/nonfarm_payroll', methods=['GET'], cors=True)  #data from BLS
+def get_nonfarm_payroll():
+    data = fetch_json_from_s3('api/bls/nonfarm_payroll.json')
+    if "error" in data:
+        return create_json_response({'message': 'Internal server error', 'details': data["error"]}, status_code=500)
+    return create_json_response(data)
+
+@app.route('/us_avg_weekly_hours', methods=['GET'], cors=True)  #data from BLS
+def get_us_avg_weekly_hours():
+    data = fetch_json_from_s3('api/bls/us_avg_weekly_hours.json')
+    if "error" in data:
+        return create_json_response({'message': 'Internal server error', 'details': data["error"]}, status_code=500)
+    return create_json_response(data)
+
+@app.route('/us_job_opening', methods=['GET'], cors=True)  #data from BLS
+def get_us_job_opening():
+    data = fetch_json_from_s3('api/bls/us_job_opening.json')
+    if "error" in data:
+        return create_json_response({'message': 'Internal server error', 'details': data["error"]}, status_code=500)
+    return create_json_response(data)
+###################################################
+
+
+#################  FRED ############################
+@app.route('/us_30yr_fix_mortgage_rate', methods=['GET'], cors=True) 
+def get_us_30yr_fix_mortgage_rate():
+    data = fetch_json_from_s3('api/fred/us_30yr_fix_mortgage_rate.json')
+    if "error" in data:
+        return create_json_response({'message': 'Internal server error', 'details': data["error"]}, status_code=500)
+    return create_json_response(data)
+
+@app.route('/consumer_price_index', methods=['GET'], cors=True) 
+def get_consumer_price_index():
+    data = fetch_json_from_s3('api/fred/consumer_price_index.json')
+    if "error" in data:
+        return create_json_response({'message': 'Internal server error', 'details': data["error"]}, status_code=500)
+    return create_json_response(data)
+
+@app.route('/federal_funds_rate', methods=['GET'], cors=True) 
+def get_federal_funds_rate():
+    data = fetch_json_from_s3('api/fred/federal_funds_rate.json')
+    if "error" in data:
+        return create_json_response({'message': 'Internal server error', 'details': data["error"]}, status_code=500)
+    return create_json_response(data)
+
+@app.route('/gdp', methods=['GET'], cors=True)  
+def get_gdp():
+    data = fetch_json_from_s3('api/fred/gdp.json')
+    if "error" in data:
+        return create_json_response({'message': 'Internal server error', 'details': data["error"]}, status_code=500)
+    return create_json_response(data)
+
+@app.route('/core_cpi', methods=['GET'], cors=True) 
+def get_core_cpi():
+    data = fetch_json_from_s3('api/fred/core_cpi.json')
+    if "error" in data:
+        return create_json_response({'message': 'Internal server error', 'details': data["error"]}, status_code=500)
+    return create_json_response(data)
+
+@app.route('/fed_total_assets', methods=['GET'], cors=True) 
+def get_fed_total_assets():
+    data = fetch_json_from_s3('api/fred/fed_total_assets.json')
+    if "error" in data:
+        return create_json_response({'message': 'Internal server error', 'details': data["error"]}, status_code=500)
+    return create_json_response(data)
+
+@app.route('/m2', methods=['GET'], cors=True)
+def get_m2():
+    data = fetch_json_from_s3('api/fred/m2.json')
+    if "error" in data:
+        return create_json_response({'message': 'Internal server error', 'details': data["error"]}, status_code=500)
+    return create_json_response(data)
+
+# @app.route('/unemployment_rate', methods=['GET'], cors=True)  #data from BLS
+# def get_unemployment_rate():
+#     data = fetch_json_from_s3('api/fred/unemployment_rate.json')
+#     if "error" in data:
+#         return create_json_response({'message': 'Internal server error', 'details': data["error"]}, status_code=500)
+#     return create_json_response(data)
+
+@app.route('/sp500', methods=['GET'], cors=True) 
+def get_sp500():
+    data = fetch_json_from_s3('api/fred/sp500.json')
+    if "error" in data:
+        return create_json_response({'message': 'Internal server error', 'details': data["error"]}, status_code=500)
+    return create_json_response(data)
+
+@app.route('/commercial_banks_deposits', methods=['GET'], cors=True)
+def get_commercial_banks_deposits():
+    data = fetch_json_from_s3('api/fred/commercial_banks_deposits.json')
+    if "error" in data:
+        return create_json_response({'message': 'Internal server error', 'details': data["error"]}, status_code=500)
+    return create_json_response(data)
+
+@app.route('/total_money_market_fund', methods=['GET'], cors=True) 
+def get_total_money_market_fund():
+    data = fetch_json_from_s3('api/fred/total_money_market_fund.json')
+    if "error" in data:
+        return create_json_response({'message': 'Internal server error', 'details': data["error"]}, status_code=500)
+    return create_json_response(data)
+
+@app.route('/us_producer_price_index', methods=['GET'], cors=True) 
+def get_us_producer_price_index():
+    data = fetch_json_from_s3('api/fred/us_producer_price_index.json')
+    if "error" in data:
+        return create_json_response({'message': 'Internal server error', 'details': data["error"]}, status_code=500)
+    return create_json_response(data)
+###################################################
