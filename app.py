@@ -24,15 +24,15 @@ FRED_S3_KEYS = {
     "sp500": "api/fred/sp500.json",
     "commercial_banks_deposits": "api/fred/commercial_banks_deposits.json",
     "total_money_market_fund": "api/fred/total_money_market_fund.json",
-    "us_producer_price_index": "api/fred/us_producer_price_index.json"
-}
-
-BLS_S3_KEYS = {
+    "us_producer_price_index": "api/fred/us_producer_price_index.json",
     "unemployment_rate": "api/bls/unemployment_rate.json",
     "nonfarm_payroll": "api/bls/nonfarm_payroll.json",
     "us_avg_weekly_hours": "api/bls/us_avg_weekly_hours.json",
     "us_job_opening": "api/bls/us_job_opening.json"
 }
+
+# BLS_S3_KEYS = {
+# }
 
 # Other categories (non-FRED, non-BLS) data path mapping
 GENERIC_S3_KEYS = {
@@ -214,22 +214,22 @@ def get_short_economy_indicator_data(indicator):
 #########################
 
 
-@app.route('/bls/{indicator}', methods=['GET'], cors=True)
-def get_bls_data(indicator):
-    s3_key = BLS_S3_KEYS.get(indicator)
+# @app.route('/bls/{indicator}', methods=['GET'], cors=True)
+# def get_bls_data(indicator):
+#     s3_key = BLS_S3_KEYS.get(indicator)
 
-    if s3_key:
-        return handle_s3_request(s3_key)
-    else:
-        return create_json_response({'message': f'Indicator {indicator} not found'}, status_code=404)
+#     if s3_key:
+#         return handle_s3_request(s3_key)
+#     else:
+#         return create_json_response({'message': f'Indicator {indicator} not found'}, status_code=404)
 
-# Combine all BLS data into one response
+# # Combine all BLS data into one response
 
 
-@app.route('/bls', methods=['GET'], cors=True)
-def get_combined_bls_data():
-    combined_bls_data = combine_data_from_s3(BLS_S3_KEYS.values())
-    return create_json_response(combined_bls_data)
+# @app.route('/bls', methods=['GET'], cors=True)
+# def get_combined_bls_data():
+#     combined_bls_data = combine_data_from_s3(BLS_S3_KEYS.values())
+#     return create_json_response(combined_bls_data)
 
 
 #########################
