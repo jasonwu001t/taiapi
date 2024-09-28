@@ -2,7 +2,7 @@ from chalice import Chalice, Response
 import boto3
 import json
 from botocore.exceptions import ClientError
-from datetime import datetime
+from datetime import datetime, timedelta
 
 app = Chalice(app_name='taiapi')
 
@@ -44,6 +44,8 @@ GENERIC_S3_KEYS = {
 }
 
 # Helper function to fetch JSON data from S3
+
+
 def fetch_json_from_s3(key: str):
     """Fetch JSON data from S3 bucket."""
     try:
@@ -56,6 +58,8 @@ def fetch_json_from_s3(key: str):
         return {"error": f"Error decoding JSON in {key}"}
 
 # Helper function to create JSON responses
+
+
 def create_json_response(body, status_code=200):
     return Response(
         body=body,
@@ -64,13 +68,18 @@ def create_json_response(body, status_code=200):
     )
 
 # Helper function to upload JSON data to S3
+
+
 def upload_json_to_s3(key: str, data: dict):
     try:
-        s3_client.put_object(Bucket=BUCKET_NAME, Key=key, Body=json.dumps(data))
+        s3_client.put_object(Bucket=BUCKET_NAME, Key=key,
+                             Body=json.dumps(data))
     except ClientError as e:
         return {"error": f"Unable to upload {key} to S3: {str(e)}"}
 
 # Date filtering function for FRED and BLS data
+
+
 def filter_last_10_years(data, date_field="date"):
     """Filter the data to only include entries from the last 10 years."""
     ten_years_ago = datetime.now() - timedelta(days=10*365)
@@ -82,26 +91,30 @@ def handle_s3_request(s3_key: str):
     data = fetch_json_from_s3(s3_key)
     if "error" in data:
         return create_json_response(
-            {'message': 'Internal server error', 'details': data["error"]}, 
+            {'message': 'Internal server error', 'details': data["error"]},
             status_code=500
         )
     return create_json_response(data)
 
 # Combine data from multiple S3 keys
+
+
 def combine_data_from_s3(keys: list):
     combined_data = []
     for key in keys:
         data = fetch_json_from_s3(key)
         if "error" not in data:
-            combined_data.extend(data)  # Assuming the data is a list of dictionaries
+            # Assuming the data is a list of dictionaries
+            combined_data.extend(data)
     return combined_data
 
 #########################
 # FRED specific endpoints
 #########################
 
-@app.route('/fred/{indicator}', methods=['GET'], cors=True)
-def get_fred_data(indicator):
+
+@app.route('/economy/{indicator}', methods=['GET'], cors=True)
+def get_economy_data(indicator):
     s3_key = FRED_S3_KEYS.get(indicator)
 
     if s3_key:
@@ -110,14 +123,96 @@ def get_fred_data(indicator):
         return create_json_response({'message': f'Indicator {indicator} not found'}, status_code=404)
 
 # Combine all FRED data into one response
-@app.route('/fred', methods=['GET'], cors=True)
-def get_combined_fred_data():
-    combined_fred_data = combine_data_from_s3(FRED_S3_KEYS.values())
-    return create_json_response(combined_fred_data)
+
+
+@app.route('/economy', methods=['GET'], cors=True)
+def get_combined_economy_data():
+    combined_economy_data = combine_data_from_s3(FRED_S3_KEYS.values())
+    return create_json_response(combined_economy_data)
+
+
+@app.route('/economy_short', methods=['GET'], cors=True)
+def get_short_economy_data():
+    request = app.current_request
+    query_params = request.query_params or {}
+
+    # Get the filter mode from query parameters
+    # Default to yearly if not specified
+    filter_mode = query_params.get('mode', 'yearly')
+
+    combined_economy_data = combine_data_from_s3(FRED_S3_KEYS.values())
+
+    if filter_mode == 'yearly':
+        filtered_data = filter_yearly_data(combined_economy_data)
+    elif filter_mode == 'recent':
+        filtered_data = filter_recent_data(combined_economy_data)
+    else:
+        return create_json_response({'message': 'Invalid filter mode. Use "yearly" or "recent".'}, status_code=400)
+
+    return create_json_response(filtered_data)
+
+
+def filter_yearly_data(data):
+    yearly_data = []
+    for item in data:
+        chart_data = item['chartData']
+        yearly_points = {}
+        for point in chart_data:
+            year = point['date'][:4]  # Extract year from date string
+            yearly_points[year] = point
+
+        item['chartData'] = list(yearly_points.values())
+        yearly_data.append(item)
+    return yearly_data
+
+
+def filter_recent_data(data):
+    three_years_ago = (datetime.now() - timedelta(days=3*365)
+                       ).strftime('%Y-%m-%d')
+    recent_data = []
+    for item in data:
+        chart_data = item['chartData']
+        recent_points = [
+            point for point in chart_data if point['date'] >= three_years_ago]
+
+        item['chartData'] = recent_points
+        recent_data.append(item)
+    return recent_data
+
+
+@app.route('/economy_short/{indicator}', methods=['GET'], cors=True)
+def get_short_economy_indicator_data(indicator):
+    request = app.current_request
+    query_params = request.query_params or {}
+
+    # Get the filter mode from query parameters
+    # Default to yearly if not specified
+    filter_mode = query_params.get('mode', 'yearly')
+
+    s3_key = FRED_S3_KEYS.get(indicator)
+    if not s3_key:
+        return create_json_response({'message': f'Indicator {indicator} not found'}, status_code=404)
+
+    data = fetch_json_from_s3(s3_key)
+    if "error" in data:
+        return create_json_response(
+            {'message': 'Internal server error', 'details': data["error"]},
+            status_code=500
+        )
+
+    if filter_mode == 'yearly':
+        filtered_data = filter_yearly_data([data])[0]
+    elif filter_mode == 'recent':
+        filtered_data = filter_recent_data([data])[0]
+    else:
+        return create_json_response({'message': 'Invalid filter mode. Use "yearly" or "recent".'}, status_code=400)
+
+    return create_json_response(filtered_data)
 
 #########################
 # BLS specific endpoints
 #########################
+
 
 @app.route('/bls/{indicator}', methods=['GET'], cors=True)
 def get_bls_data(indicator):
@@ -129,14 +224,18 @@ def get_bls_data(indicator):
         return create_json_response({'message': f'Indicator {indicator} not found'}, status_code=404)
 
 # Combine all BLS data into one response
+
+
 @app.route('/bls', methods=['GET'], cors=True)
 def get_combined_bls_data():
     combined_bls_data = combine_data_from_s3(BLS_S3_KEYS.values())
     return create_json_response(combined_bls_data)
 
+
 #########################
 # Generic category-based endpoint (Non-FRED, Non-BLS)
 #########################
+
 
 @app.route('/{category}/{key}', methods=['GET'], cors=True)
 @app.route('/{category}', methods=['GET'], cors=True)
@@ -168,16 +267,18 @@ def get_generic_data(category, key=None):
     else:
         return create_json_response({'message': f'Category {category} not found'}, status_code=404)
 
+
 @app.route('/stocks/daily_ohlc/{symbol}', methods=['GET'], cors=True)
 def get_daily_ohlc(symbol):
     key = f'api/stock_daily_bar/{symbol.upper()}.json'
     data = fetch_json_from_s3(key)
     if "error" in data:
         return create_json_response(
-            {'message': f'Stock data for {symbol.upper()} not found', 'details': data["error"]},
+            {'message': f'Stock data for {symbol.upper()} not found',
+             'details': data["error"]},
             status_code=404
         )
-    
+
     # Get query parameters
     request = app.current_request
     query_params = request.query_params
@@ -217,7 +318,8 @@ def get_daily_ohlc(symbol):
         for record in data:
             # Parse the date in each record
             try:
-                record_date = datetime.strptime(record['date'], "%Y-%m-%d").date()
+                record_date = datetime.strptime(
+                    record['date'], "%Y-%m-%d").date()
             except ValueError:
                 continue  # Skip records with invalid date format
 
@@ -240,27 +342,28 @@ def get_daily_ohlc(symbol):
 def subscribe_user():
     request = app.current_request
     body = request.json_body
-    
+
     # Validate the input data
     name = body.get('name')
     email = body.get('email')
-    subscribe_to_email_list = body.get('subscribe', False)  # Default to False if not provided
-    
+    # Default to False if not provided
+    subscribe_to_email_list = body.get('subscribe', False)
+
     if not name or not email:
         return create_json_response({'message': 'Name and email are required.'}, status_code=400)
-    
+
     # Fetch existing subscription data from S3
     subscriptions = fetch_json_from_s3(SUBSCRIPTION_KEY)
     if "error" in subscriptions:
         return create_json_response({'message': 'Internal server error', 'details': subscriptions['error']}, status_code=500)
-    
+
     # Add the new subscription
     new_subscription = {
         'name': name,
         'email': email,
         'subscribe': subscribe_to_email_list
     }
-    
+
     if isinstance(subscriptions, list):
         subscriptions.append(new_subscription)
     else:
