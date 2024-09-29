@@ -43,8 +43,6 @@ GENERIC_S3_KEYS = {
     "indicators": "indicators.json",
 }
 
-# Helper function to fetch JSON data from S3
-
 
 def fetch_json_from_s3(key: str):
     """Fetch JSON data from S3 bucket."""
@@ -152,34 +150,6 @@ def get_short_economy_data():
     return create_json_response(filtered_data)
 
 
-def filter_yearly_data(data):
-    yearly_data = []
-    for item in data:
-        chart_data = item['chartData']
-        yearly_points = {}
-        for point in chart_data:
-            year = point['date'][:4]  # Extract year from date string
-            yearly_points[year] = point
-
-        item['chartData'] = list(yearly_points.values())
-        yearly_data.append(item)
-    return yearly_data
-
-
-def filter_recent_data(data):
-    three_years_ago = (datetime.now() - timedelta(days=3*365)
-                       ).strftime('%Y-%m-%d')
-    recent_data = []
-    for item in data:
-        chart_data = item['chartData']
-        recent_points = [
-            point for point in chart_data if point['date'] >= three_years_ago]
-
-        item['chartData'] = recent_points
-        recent_data.append(item)
-    return recent_data
-
-
 @app.route('/economy_short/{indicator}', methods=['GET'], cors=True)
 def get_short_economy_indicator_data(indicator):
     request = app.current_request
@@ -208,6 +178,40 @@ def get_short_economy_indicator_data(indicator):
         return create_json_response({'message': 'Invalid filter mode. Use "yearly" or "recent".'}, status_code=400)
 
     return create_json_response(filtered_data)
+
+
+def filter_yearly_data(data):
+    current_year = datetime.now().year
+    # We want the current year plus 4 previous years
+    five_years_ago = current_year - 4
+
+    yearly_data = []
+    for item in data:
+        chart_data = item['chartData']
+        yearly_points = {}
+        for point in chart_data:
+            # Extract year from date string and convert to int
+            year = int(point['date'][:4])
+            if year >= five_years_ago:
+                yearly_points[year] = point
+
+        item['chartData'] = list(yearly_points.values())
+        yearly_data.append(item)
+    return yearly_data
+
+
+def filter_recent_data(data):
+    three_years_ago = (datetime.now() - timedelta(days=3*365)
+                       ).strftime('%Y-%m-%d')
+    recent_data = []
+    for item in data:
+        chart_data = item['chartData']
+        recent_points = [
+            point for point in chart_data if point['date'] >= three_years_ago]
+
+        item['chartData'] = recent_points
+        recent_data.append(item)
+    return recent_data
 
 #########################
 # BLS specific endpoints
